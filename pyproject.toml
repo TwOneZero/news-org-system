@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "news-org-system"
 version = "0.1.0"
@@ -5,11 +9,53 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "gdeltdoc>=1.12.0",
     "langchain>=1.2.12",
     "langchain-core>=1.2.18",
     "langchain-openai>=1.1.11",
+    "newspaper4k[nlp]>=0.9.5",
     "pip>=26.0.1",
     "pymongo>=4.16.0",
     "spacy>=3.8.11",
     "transformers>=5.3.0",
+    "feedparser>=6.0.11",
+    "dart-fss>=0.4.0",
+    "apscheduler>=3.10.4",
+    "python-dotenv>=1.0.0",
+    "trafilatura>=2.0.0",
 ]
+
+[project.scripts]
+news-org = "src.news_api:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[dependency-groups]
+gnews = [
+    "newspaper4k>=0.9.5",
+]
+nlp = [
+    "newspaper4k>=0.9.5",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (real RSS feeds, network access)",
+    "unit: marks tests as unit tests (fast, no network)",
+    "slow: marks tests as slow (network calls, large datasets)"
+]
+addopts = "-v --strict-markers --tb=short --cov=src --cov-report=term-missing"

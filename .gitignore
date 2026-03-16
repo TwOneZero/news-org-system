@@ -5,8 +5,17 @@ build/
 dist/
 wheels/
 *.egg-info
+.eggs/
+.uv/
 
 # Virtual environments
 .venv
 
 .env
+
+#test
+.coverage
+
+
+# claude local settings
+settings.local.json
