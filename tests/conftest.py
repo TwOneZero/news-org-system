@@ -18,13 +18,13 @@ def rss_reader_maeil():
 
 
 @pytest.fixture
-def rss_reader_bbc():
-    """RSS reader configured for BBC.
+def rss_reader_etnews():
+    """RSS reader configured for ETnews.
 
     Returns:
-        RSSReader instance configured for BBC news feed
+        RSSReader instance configured for ETnews feed
     """
-    return RSSReader("bbc_test", feed_url="https://feeds.bbci.co.uk/news/rss.xml")
+    return RSSReader("etnews_test", feed_url="https://rss.etnews.com/Section901.xml")
 
 
 @pytest.fixture
@@ -38,6 +38,38 @@ def rss_reader_yonhap():
         "yonhap_test",
         feed_url="https://www.yonhapnewstv.co.kr/category/news/economy/feed"
     )
+
+
+@pytest.fixture
+def rss_reader_yonhap_from_source():
+    """RSS reader created using from_source() classmethod for Yonhap.
+
+    Tests the new registry-based instantiation method.
+
+    Returns:
+        RSSReader instance created from registry
+    """
+    return RSSReader.from_source("yonhap_economy")
+
+
+@pytest.fixture
+def rss_reader_maeil_from_source():
+    """RSS reader created using from_source() classmethod for Maeil.
+
+    Returns:
+        RSSReader instance created from registry
+    """
+    return RSSReader.from_source("maeil_management")
+
+
+@pytest.fixture
+def rss_reader_etnews_from_source():
+    """RSS reader created using from_source() classmethod for ETnews.
+
+    Returns:
+        RSSReader instance created from registry
+    """
+    return RSSReader.from_source("etnews_today")
 
 
 @pytest.fixture
