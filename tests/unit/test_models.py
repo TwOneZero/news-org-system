@@ -8,8 +8,8 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from src.readers.models.rss_config import RSSFeedConfig, RSSItem
-from src.readers.models.site_config import SiteConfig
+from news_org_system.readers.models.rss_config import RSSFeedConfig, RSSItem
+from news_org_system.readers.models.site_config import SiteConfig
 
 
 class TestRSSFeedConfig:

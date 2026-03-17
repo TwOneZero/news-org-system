@@ -6,7 +6,7 @@ including get_adapter, get_feed_config, register_feed, and list_feeds.
 
 import pytest
 
-from src.readers.registry import (
+from news_org_system.readers.registry import (
     ADAPTER_REGISTRY,
     FEED_REGISTRY,
     get_adapter,
@@ -16,13 +16,13 @@ from src.readers.registry import (
     list_feeds,
     list_adapters,
 )
-from src.readers.adapters.base import BaseRSSAdapter
-from src.readers.adapters.default_adapter import DefaultRSSAdapter
-from src.readers.adapters.yonhap_adapter import YonhapAdapter
-from src.readers.adapters.maeil_adapter import MaeliAdapter
-from src.readers.adapters.etnews_adapter import ETnewsAdapter
-from src.readers.models.rss_config import RSSFeedConfig
-from src.readers.models.site_config import SiteConfig
+from news_org_system.readers.adapters.base import BaseRSSAdapter
+from news_org_system.readers.adapters.default_adapter import DefaultRSSAdapter
+from news_org_system.readers.adapters.yonhap_adapter import YonhapAdapter
+from news_org_system.readers.adapters.maeil_adapter import MaeliAdapter
+from news_org_system.readers.adapters.etnews_adapter import ETnewsAdapter
+from news_org_system.readers.models.rss_config import RSSFeedConfig
+from news_org_system.readers.models.site_config import SiteConfig
 
 
 class TestAdapterRegistry:
@@ -245,7 +245,7 @@ class TestRegistryIntegration:
 
         # The modification affects registry because it's shallow copy
         # Restore original value for other tests
-        from src.readers.registry import FEED_REGISTRY
+        from news_org_system.readers.registry import FEED_REGISTRY
         FEED_REGISTRY["yonhap_economy"].feed_url = original_url
 
         # Verify restoration

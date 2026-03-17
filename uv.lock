@@ -1189,7 +1189,7 @@ dependencies = [
     { name = "transformers" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -1206,14 +1206,17 @@ requires-dist = [
     { name = "newspaper4k", extras = ["nlp"], specifier = ">=0.9.5" },
     { name = "pip", specifier = ">=26.0.1" },
     { name = "pymongo", specifier = ">=4.16.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "spacy", specifier = ">=3.8.11" },
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "transformers", specifier = ">=5.3.0" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+]
 
 [[package]]
 name = "newspaper4k"

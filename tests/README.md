@@ -159,7 +159,7 @@ pytest --markers
 
 ```python
 import pytest
-from src.readers.base_reader import Article
+from news_org_system.readers.base_reader import Article
 
 @pytest.mark.integration
 def test_new_source_fetch_success(rss_reader_new_source):
@@ -174,7 +174,7 @@ def test_new_source_fetch_success(rss_reader_new_source):
 
 ```python
 import pytest
-from src.readers.base_reader import Article
+from news_org_system.readers.base_reader import Article
 
 @pytest.mark.unit
 def test_article_model_validation():

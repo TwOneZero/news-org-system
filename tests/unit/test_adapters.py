@@ -9,12 +9,12 @@ import pytest
 from datetime import datetime
 from unittest.mock import Mock, MagicMock, patch
 
-from src.readers.adapters.base import BaseRSSAdapter
-from src.readers.adapters.default_adapter import DefaultRSSAdapter
-from src.readers.adapters.yonhap_adapter import YonhapAdapter
-from src.readers.adapters.maeil_adapter import MaeliAdapter
-from src.readers.adapters.etnews_adapter import ETnewsAdapter
-from src.readers.models.site_config import SiteConfig
+from news_org_system.readers.adapters.base import BaseRSSAdapter
+from news_org_system.readers.adapters.default_adapter import DefaultRSSAdapter
+from news_org_system.readers.adapters.yonhap_adapter import YonhapAdapter
+from news_org_system.readers.adapters.maeil_adapter import MaeliAdapter
+from news_org_system.readers.adapters.etnews_adapter import ETnewsAdapter
+from news_org_system.readers.models.site_config import SiteConfig
 
 
 class TestBaseRSSAdapter:

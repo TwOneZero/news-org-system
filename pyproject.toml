@@ -25,19 +25,13 @@ dependencies = [
 ]
 
 [project.scripts]
-news-org = "src.news_api:main"
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-]
+news-org = "news_org_system.news_api:main"
 
 [tool.uv]
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/news_org_system"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -49,4 +43,10 @@ markers = [
     "unit: marks tests as unit tests (fast, no network)",
     "slow: marks tests as slow (network calls, large datasets)"
 ]
-addopts = "-v --strict-markers --tb=short --cov=src --cov-report=term-missing"
+addopts = "-v --strict-markers --tb=short --cov=news_org_system --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]

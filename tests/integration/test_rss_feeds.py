@@ -11,9 +11,9 @@ Also tests the new from_source() classmethod and registry system.
 import pytest
 from datetime import datetime
 
-from src.readers.base_reader import Article
-from src.readers.rss_reader import RSSReader
-from src.readers.registry import get_feed_config, list_feeds
+from news_org_system.readers.base_reader import Article
+from news_org_system.readers.rss_reader import RSSReader
+from news_org_system.readers.registry import get_feed_config, list_feeds
 
 
 @pytest.mark.integration
