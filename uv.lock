@@ -566,20 +566,6 @@ wheels = [
 ]
 
 [[package]]
-name = "gdeltdoc"
-version = "1.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pandas" },
-    { name = "requests" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/d6/33bea6847f8e8fb701464cdef7fadff18b7e38f7e31736e943f96f6c8723/gdeltdoc-1.12.0.tar.gz", hash = "sha256:f95f84011df577a3d6db11cea54ccca2aa7dc5ad7d184b5a0bba3908098813d2", size = 15121, upload-time = "2025-04-03T09:01:31.582Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/df/acb3cd71a9b8027d94d3b407312c4073423bccb1eed2a2cdcd00230a8c3d/gdeltdoc-1.12.0-py3-none-any.whl", hash = "sha256:2d87d572e14685fb1e01df75a8181102162d06faa25d0662695a08b943665545", size = 17689, upload-time = "2025-04-03T09:01:30.225Z" },
-]
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1191,7 +1177,6 @@ dependencies = [
     { name = "apscheduler" },
     { name = "dart-fss" },
     { name = "feedparser" },
-    { name = "gdeltdoc" },
     { name = "langchain" },
     { name = "langchain-core" },
     { name = "langchain-openai" },
@@ -1210,20 +1195,11 @@ dev = [
     { name = "pytest-cov" },
 ]
 
-[package.dev-dependencies]
-gnews = [
-    { name = "newspaper4k" },
-]
-nlp = [
-    { name = "newspaper4k" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "apscheduler", specifier = ">=3.10.4" },
     { name = "dart-fss", specifier = ">=0.4.0" },
     { name = "feedparser", specifier = ">=6.0.11" },
-    { name = "gdeltdoc", specifier = ">=1.12.0" },
     { name = "langchain", specifier = ">=1.2.12" },
     { name = "langchain-core", specifier = ">=1.2.18" },
     { name = "langchain-openai", specifier = ">=1.1.11" },
@@ -1238,10 +1214,6 @@ requires-dist = [
     { name = "transformers", specifier = ">=5.3.0" },
 ]
 provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-gnews = [{ name = "newspaper4k", specifier = ">=0.9.5" }]
-nlp = [{ name = "newspaper4k", specifier = ">=0.9.5" }]
 
 [[package]]
 name = "newspaper4k"
