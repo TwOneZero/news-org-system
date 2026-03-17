@@ -41,19 +41,12 @@ class NewsCollectionPipeline:
             database_name=database_name,
         )
 
-        # Initialize readers with specific feed URLs
+        # Initialize readers using registry system
+        # RSSReader.from_source() creates readers from registered feed configurations
         self.readers = {
-            "yonhap_economy": RSSReader(
-                source_name="yonhap_economy",
-                feed_url="https://www.yonhapnewstv.co.kr/category/news/economy/feed",
-            ),
-            "maeil_management": RSSReader(
-                source_name="maeil_management",
-                feed_url="https://www.mk.co.kr/rss/50100032/",
-            ),
-            "bbc": RSSReader(
-                source_name="bbc", feed_url="https://feeds.bbci.co.uk/news/rss.xml"
-            ),
+            "yonhap_economy": RSSReader.from_source("yonhap_economy"),
+            "maeil_management": RSSReader.from_source("maeil_management"),
+            "etnews_today": RSSReader.from_source("etnews_today"),
         }
 
         # Add DART reader if API key is available
