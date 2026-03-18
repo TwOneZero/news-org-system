@@ -49,7 +49,7 @@ class BaseReader(ABC):
         """Initialize the reader.
 
         Args:
-            source_name: Name of the data source (e.g., 'yonhap', 'dart')
+            source_name: Name of the data source (e.g., 'yonhap', 'maeil')
         """
         self.source_name = source_name
 

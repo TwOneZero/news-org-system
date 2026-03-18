@@ -1,17 +1,17 @@
-"""MongoDB storage for collected articles and disclosures."""
+"""MongoDB storage for collected articles"""
 
 import os
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from pymongo import MongoClient, ASCENDING
+from pymongo import ASCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 
 from ..readers.base_reader import Article
 
 
 class MongoStore:
-    """MongoDB storage for articles and disclosures.
+    """MongoDB storage for articles
 
     Provides methods to store, retrieve, and manage collected data.
     """
@@ -20,59 +20,61 @@ class MongoStore:
         self,
         connection_string: Optional[str] = None,
         database_name: str = "news_org",
-        collection_name: str = "articles",
+        articles_collection: str = "articles",
     ):
         """Initialize MongoDB connection.
 
         Args:
             connection_string: MongoDB connection URI (defaults to MONGO_URI env variable)
             database_name: Name of the database
-            collection_name: Name of the collection
+            articles_collection: Name of the collection for news articles
         """
         self.connection_string = connection_string or os.getenv(
             "MONGO_URI", "mongodb://localhost:27017"
         )
         self.database_name = database_name
-        self.collection_name = collection_name
+        self.articles_collection_name = articles_collection
 
         # Initialize MongoDB client
         self.client = MongoClient(self.connection_string)
         self.db = self.client[database_name]
-        self.collection = self.db[collection_name]
+
+        # Create collection reference
+        self.articles_collection = self.db[articles_collection]
 
         # Create indexes for efficient querying
         self._create_indexes()
 
     def _create_indexes(self):
-        """Create indexes for efficient queries."""
+        """Create indexes for both collections."""
         try:
-            # Unique index on URL to prevent duplicates
-            self.collection.create_index("url", unique=True)
-
-            # Index for date-based queries
-            self.collection.create_index([("published_at", ASCENDING)])
-
-            # Index for source-based queries
-            self.collection.create_index("source")
-
-            # Index for compound queries
-            self.collection.create_index(
+            # Articles collection indexes
+            self.articles_collection.create_index("url", unique=True)
+            self.articles_collection.create_index([("published_at", ASCENDING)])
+            self.articles_collection.create_index("source")
+            self.articles_collection.create_index(
                 [("source", ASCENDING), ("published_at", ASCENDING)]
             )
-
         except Exception as e:
             print(f"Warning: Could not create indexes: {e}")
 
-    def save_articles(self, articles: List[Article]) -> int:
+    def save_articles(self, articles: List[Article]) -> dict:
         """Save articles to MongoDB.
 
         Args:
             articles: List of Article objects to save
 
         Returns:
-            Number of articles successfully saved
+            Dictionary with save statistics:
+            {
+                "saved": int,
+                "skipped": int
+            }
         """
-        saved_count = 0
+        results = {
+            "saved": 0,
+            "skipped": 0,
+        }
 
         for article in articles:
             try:
@@ -86,17 +88,18 @@ class MongoStore:
                     article_dict["crawled_at"] = article_dict["crawled_at"]
 
                 # Insert to database
-                self.collection.insert_one(article_dict)
-                saved_count += 1
+                self.articles_collection.insert_one(article_dict)
+                results["saved"] += 1
 
             except DuplicateKeyError:
                 # Article with this URL already exists, skip
+                results["skipped"] += 1
                 continue
             except Exception as e:
                 print(f"Error saving article {article.url}: {e}")
                 continue
 
-        return saved_count
+        return results
 
     def get_articles(
         self,
@@ -105,10 +108,10 @@ class MongoStore:
         end_date: Optional[datetime] = None,
         limit: int = 100,
     ) -> List[dict]:
-        """Retrieve articles from MongoDB.
+        """Retrieve articles from database.
 
         Args:
-            source: Filter by source (e.g., 'yonhap', 'dart')
+            source: Filter by source (e.g., 'yonhap')
             start_date: Filter articles published after this date
             end_date: Filter articles published before this date
             limit: Maximum number of articles to return
@@ -127,7 +130,9 @@ class MongoStore:
             query["published_at"] = {"$lte": end_date}
 
         # Execute query
-        cursor = self.collection.find(query).sort("published_at", -1).limit(limit)
+        cursor = (
+            self.articles_collection.find(query).sort("published_at", -1).limit(limit)
+        )
 
         return list(cursor)
 
@@ -140,7 +145,7 @@ class MongoStore:
         Returns:
             Article dictionary or None if not found
         """
-        return self.collection.find_one({"url": url})
+        return self.articles_collection.find_one({"url": url})
 
     def delete_old_articles(self, days: int = 30) -> int:
         """Delete articles older than specified days.
@@ -152,27 +157,34 @@ class MongoStore:
             Number of articles deleted
         """
         cutoff_date = datetime.now() - timedelta(days=days)
-        result = self.collection.delete_many({"published_at": {"$lt": cutoff_date}})
+        result = self.articles_collection.delete_many(
+            {"published_at": {"$lt": cutoff_date}}
+        )
         return result.deleted_count
 
     def get_stats(self) -> dict:
-        """Get statistics about stored articles.
+        """Get statistics about articles.
 
         Returns:
-            Dictionary with statistics
+            Dictionary with statistics:
+            {
+                "total": int,
+                "by_source": dict,
+                "latest": dict
+            }
         """
+        # Count articles by source
         pipeline = [{"$group": {"_id": "$source", "count": {"$sum": 1}}}]
-
         source_counts = {
-            doc["_id"]: doc["count"] for doc in self.collection.aggregate(pipeline)
+            doc["_id"]: doc["count"]
+            for doc in self.articles_collection.aggregate(pipeline)
         }
 
         return {
-            "total_articles": self.collection.count_documents({}),
+            "total": self.articles_collection.count_documents({}),
             "by_source": source_counts,
-            "latest_article": self.collection.find_one(sort=[("published_at", -1)]),
+            "latest": self.articles_collection.find_one(sort=[("published_at", -1)]),
         }
 
-    def close(self):
         """Close MongoDB connection."""
         self.client.close()

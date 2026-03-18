@@ -1,36 +1,37 @@
-"""News and Disclosure Data Collection Pipeline.
+"""News Data Collection Pipeline.
 
-This module provides a comprehensive pipeline for collecting Korean and global news
-along with Korean corporate disclosures from DART.
+This module provides a comprehensive pipeline for collecting Korean and global news.
 """
 
 import os
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
-from .storage import MongoStore
-from .readers import RSSReader, DARTReader
+from dotenv import load_dotenv
 
+from .readers import RSSReader
+from .storage import MongoStore
 
 # Load environment variables
 load_dotenv()
 
 
 class NewsCollectionPipeline:
-    """Main pipeline for collecting news and disclosure data."""
+    """Main pipeline for collecting news data."""
 
     def __init__(
         self,
         mongo_uri: str = None,
         database_name: str = "news_org",
+        articles_collection: str = "articles",
     ):
         """Initialize the pipeline.
 
         Args:
             mongo_uri: MongoDB connection URI (defaults to MONGO_URI env variable)
             database_name: Name of the MongoDB database
+            articles_collection: Collection name for news articles
         """
         # Initialize MongoDB storage
         self.mongo_uri = mongo_uri or os.getenv(
@@ -39,6 +40,7 @@ class NewsCollectionPipeline:
         self.storage = MongoStore(
             connection_string=self.mongo_uri,
             database_name=database_name,
+            articles_collection=articles_collection,
         )
 
         # Initialize readers using registry system
@@ -48,14 +50,6 @@ class NewsCollectionPipeline:
             "maeil_management": RSSReader.from_source("maeil_management"),
             "etnews_today": RSSReader.from_source("etnews_today"),
         }
-
-        # Add DART reader if API key is available
-        dart_api_key = os.getenv("DART_API_KEY")
-        if dart_api_key:
-            try:
-                self.readers["dart"] = DARTReader(source_name="dart")
-            except Exception as e:
-                print(f"Warning: Could not initialize DART reader: {e}")
 
     def collect_all(self, days_back: int = 1, limit: int = 10) -> dict:
         """Collect articles from all configured sources.
@@ -94,8 +88,9 @@ class NewsCollectionPipeline:
 
                 print(f"Fetched {len(articles)} articles")
 
-                # Save to MongoDB
-                saved = self.storage.save_articles(articles)
+                # Save to MongoDB (auto-routed to appropriate collection)
+                save_result = self.storage.save_articles(articles)
+                saved = save_result["total_saved"]
                 total_saved += saved
 
                 results["sources"][source_name] = {
@@ -103,7 +98,7 @@ class NewsCollectionPipeline:
                     "saved": saved,
                 }
 
-                print(f"Saved {saved} new articles to database")
+                print(f"Saved {saved} articles to articles collection")
 
             except Exception as e:
                 print(f"Error collecting from {source_name}: {e}")
@@ -187,16 +182,21 @@ def main():
             print(f"\n{'=' * 60}")
             print("Database Statistics")
             print(f"{'=' * 60}")
-            print(f"Total articles: {stats['total_articles']}")
-            print("\nBy source:")
-            for source, count in stats["by_source"].items():
-                print(f"  {source}: {count}")
 
-            if stats["latest_article"]:
+            # Articles section
+            print("\n--- Articles ---")
+            print(f"Total: {stats['articles']['total']}")
+            if stats["articles"]["by_source"]:
+                print("\nBy source:")
+                for source, count in stats["articles"]["by_source"].items():
+                    print(f"  {source}: {count}")
+
+            # Latest entries
+            if stats["articles"]["latest"]:
                 print("\nLatest article:")
-                print(f"  Source: {stats['latest_article']['source']}")
-                print(f"  Title: {stats['latest_article']['title']}")
-                print(f"  Date: {stats['latest_article']['published_at']}")
+                print(f"  Source: {stats['articles']['latest']['source']}")
+                print(f"  Title: {stats['articles']['latest']['title']}")
+                print(f"  Date: {stats['articles']['latest']['published_at']}")
 
         elif command == "schedule":
             # Run as scheduled job
@@ -211,7 +211,7 @@ def main():
                 run_scheduled_job,
                 CronTrigger(hour="9,18", minute="0"),
                 id="daily_collection",
-                name="Daily news and disclosure collection",
+                name="Daily news collection",
                 replace_existing=True,
             )
 
@@ -240,7 +240,7 @@ def main():
 def print_usage():
     """Print usage instructions."""
     print("""
-News and Disclosure Collection Pipeline
+News Collection Pipeline
 
 Usage:
   python news_api.py <command>
@@ -253,7 +253,6 @@ Commands:
 
 Environment Variables:
   MONGO_URI        - MongoDB connection URI (default: mongodb://localhost:27017)
-  DART_API_KEY     - DART API key (get free at https://opendart.fss.or.kr/)
 
 Examples:
   # Collect articles once
@@ -267,9 +266,8 @@ Examples:
 
 Setup:
   1. Copy .env.example to .env
-  2. Set DART_API_KEY in .env
-  3. Ensure MongoDB is running
-  4. Run: python news_api.py collect
+  2. Ensure MongoDB is running
+  3. Run: python news_api.py collect
 """)
 
 

@@ -1,8 +1,7 @@
-"""Data readers for various news and disclosure sources."""
+"""Data readers for various news sources."""
 
 from .base_reader import BaseReader, Article
 from .rss_reader import RSSReader
-from .dart_reader import DARTReader
 
 # New adapter pattern exports
 from .models import RSSFeedConfig, RSSItem, SiteConfig
@@ -22,7 +21,6 @@ __all__ = [
     "BaseReader",
     "Article",
     "RSSReader",
-    "DARTReader",
     # Pydantic models
     "RSSFeedConfig",
     "RSSItem",

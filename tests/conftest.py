@@ -1,10 +1,11 @@
 """Shared fixtures and configuration for pytest tests."""
 
+import os
 import pytest
-from datetime import datetime
 
 from news_org_system.readers.rss_reader import RSSReader
 from news_org_system.readers.base_reader import Article
+from news_org_system.storage.mongo_store import MongoStore
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ def rss_reader_yonhap():
     """
     return RSSReader(
         "yonhap_test",
-        feed_url="https://www.yonhapnewstv.co.kr/category/news/economy/feed"
+        feed_url="https://www.yonhapnewstv.co.kr/category/news/economy/feed",
     )
 
 
@@ -82,6 +83,7 @@ def validate_article_quality():
     Returns:
         Function that takes an Article and returns validation dict
     """
+
     def _validate(article: Article) -> dict:
         """Validate article quality.
 
@@ -108,7 +110,7 @@ def validate_article_quality():
             "is_valid": len(issues) == 0,
             "issues": issues,
             "content_length": len(article.content),
-            "has_html": "<" in article.content and ">" in article.content
+            "has_html": "<" in article.content and ">" in article.content,
         }
 
     return _validate
@@ -134,5 +136,33 @@ def quality_thresholds():
     return {
         "min_content_length": 500,
         "max_html_ratio": 0.1,  # Max 10% HTML characters
-        "min_success_rate": 0.8  # 80% of articles should pass
+        "min_success_rate": 0.8,  # 80% of articles should pass
     }
+
+
+@pytest.fixture
+def mongo_store():
+    """MongoStore instance for testing.
+
+    Returns:
+        MongoStore instance configured for testing
+    """
+    # Get MongoDB URI from environment
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+
+    # Use test database to avoid affecting production data
+    store = MongoStore(
+        connection_string=mongo_uri,
+        database_name="news_org_test",
+        articles_collection="test_articles",
+    )
+
+    yield store
+
+    # Cleanup: Drop test collections after tests
+    try:
+        store.client["news_org_test"].drop_collection("test_articles")
+    except Exception:
+        pass  # Ignore cleanup errors
+    finally:
+        store.close()

@@ -2,13 +2,12 @@
 
 한국 및 글로벌 뉴스 수집 파이프라인 시스템
 
-다양한 뉴스 소스(연합뉴스, 매일경제, BBC 등)와 한국 공시정보(DART)에서 기사와 공시 자료를 자동 수집하여 MongoDB에 저장하는 파이프라인 시스템입니다.
+다양한 뉴스 소스(연합뉴스, 매일경제, ETnews 등)에서 기사를 자동 수집하여 MongoDB에 저장하는 파이프라인 시스템입니다.
 
 ## 주요 기능
 
-- **다양한 뉴스 소스 수집**: 연합뉴스, 매일경제, BBC 등 주요 뉴스 매체의 RSS 피드 자동 수집
+- **다양한 뉴스 소스 수집**: 연합뉴스, 매일경제, ETnews 등 주요 뉴스 매체의 RSS 피드 자동 수집
 - **전체 기사 본문 추출**: newspaper4k 및 beautifulsoup 를 활용한 기사 내용추출
-- **한국 공시정보 수집**: DART(금융감독원 전자공시시스템) 공시 자료 자동 수집
 - **중복 제거**: URL 기반 중복 기사 자동 필터링
 - **스케줄링**: 매일 지정된 시간에 자동 수집 (9시, 18시)
 - **데몬 모드**: 백그라운드에서 지속적인 수집 서비스 실행
@@ -21,7 +20,6 @@
   - feedparser (RSS/Atom 피드)
   - beautifulsoup (커스텀 파싱)
   - newspaper4k (기사 본문 추출)
-  - dart-fss (한국 공시정보)
 - **데이터베이스**: MongoDB 4.16+
 - **스케줄링**: apscheduler
 - **의존성 관리**: uv
@@ -32,7 +30,6 @@
 
 - Python 3.12 이상
 - MongoDB 4.16 이상 (로컬 또는 MongoDB Atlas)
-- [DART API 키](https://opendart.fss.or.kr/)
 
 ### 1. 저장소 복제
 
@@ -76,9 +73,6 @@ pip install -e .
 MONGO_URI=mongodb://localhost:27017/
 # 또는 MongoDB Atlas를 사용하는 경우
 # MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/
-
-# DART API 키 (https://opendart.fss.or.kr/ 에서 무료 발급 가능)
-DART_API_KEY=your_dart_api_key_here
 ```
 
 ## 사용 방법
@@ -116,12 +110,12 @@ news-org-system/
 ├── src/
 │   ├── readers/
 │   │   ├── __init__.py
-│   │   ├── base.py           # BaseReader 추상 클래스
-│   │   ├── rss.py            # RSSReader 구현
-│   │   └── dart.py           # DARTReader 구현
+│   │   ├── base_reader.py    # BaseReader 추상 클래스
+│   │   ├── rss_reader.py     # RSSReader 구현
+│   │   └── registry.py       # RSS 피드/어댑터 레지스트리
 │   ├── storage/
 │   │   ├── __init__.py
-│   │   └── mongo.py          # MongoStore 구현
+│   │   └── mongo_store.py    # MongoStore 구현
 │   └── news_api.py           # 메인 CLI 및 파이프라인
 ├── test/
 │   ├── __init__.py
@@ -138,16 +132,15 @@ news-org-system/
 ### 데이터 수집 흐름
 
 1. **NewsCollectionPipeline**이 모든 리더를 초기화
-2. 각 리더(RSSReader, DARTReader)가 데이터 소스에서 기사 수집
+2. 각 리더(RSSReader)가 데이터 소스에서 기사 수집
 3. 수집된 기사를 MongoStore에 저장 (URL 기반 중복 제거)
 4. 수집 통계 집계 및 출력
 
 ### 지원하는 뉴스 소스
 
-- **연합뉴스**: 뉴스스탠드, 경제 뉴스
+- **연합뉴스**: 경제 뉴스
 - **매일경제**: 경영/경제 뉴스
-- **BBC**: 글로벌 뉴스
-- **DART**: 한국 기업 공시정보
+- **ETnews**: IT/과학 뉴스
 
 ## 설정
 
@@ -174,7 +167,7 @@ uv run pytest test/test_news_pipeline.py
 uv run pytest -v
 ```
 
-## 개선 계획
+## 추후 개발 계획
 
 - [ ] 더 많은 뉴스 소스 추가
 - [ ] 스케쥴링 및 데이터 분류 업데이트
@@ -182,3 +175,4 @@ uv run pytest -v
 - [ ] AI 기반 뉴스 요약 및 분류
 - [ ] 알림 시스템 (이메일, Slack 등)
 - [ ] 한국어 외 다국어 지원
+- [ ] DART 공시정보 수집 (재개발 예정)

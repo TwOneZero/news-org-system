@@ -19,3 +19,6 @@ wheels/
 
 # claude local settings
 settings.local.json
+
+
+.pytest_cache/
