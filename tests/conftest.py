@@ -166,3 +166,26 @@ def mongo_store():
         pass  # Ignore cleanup errors
     finally:
         store.close()
+
+# --- FastAPI Test Fixtures ---
+from unittest.mock import MagicMock
+from fastapi.testclient import TestClient
+
+from news_org_system.api.main import create_app
+from news_org_system.api.dependencies import get_store
+
+@pytest.fixture
+def mock_store():
+    """Mocked MongoStore for unit and integration testing."""
+    mock = MagicMock(spec=MongoStore)
+    return mock
+
+@pytest.fixture
+def test_client(mock_store):
+    """FastAPI TestClient with overridden dependencies."""
+    app = create_app()
+    app.dependency_overrides[get_store] = lambda: mock_store
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()
+

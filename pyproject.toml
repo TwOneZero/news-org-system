@@ -9,9 +9,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "langchain>=1.2.12",
-    "langchain-core>=1.2.18",
-    "langchain-openai>=1.1.11",
+    "langchain==1.2.12",
+    "langchain-core==1.2.18",
+    "langchain-openai==1.1.11",
     "newspaper4k[nlp]>=0.9.5",
     "pip>=26.0.1",
     "pymongo>=4.16.0",
@@ -22,10 +22,14 @@ dependencies = [
     "apscheduler>=3.10.4",
     "python-dotenv>=1.0.0",
     "trafilatura>=2.0.0",
+    "fastapi==0.135.1",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.0.0",
 ]
 
 [project.scripts]
 news-org = "news_org_system.news_api:main"
+news-org-api = "news_org_system.api.main:main"
 
 [tool.uv]
 package = true
@@ -49,4 +53,6 @@ addopts = "-v --strict-markers --tb=short --cov=news_org_system --cov-report=ter
 dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
+    "httpx>=0.27.0",  # For testing FastAPI
+    "pytest-asyncio>=0.23.0",  # For async test support
 ]

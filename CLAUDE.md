@@ -4,7 +4,7 @@
 
 ## 프로젝트 컨셉
 
-RSS/Atom 피드 기반 뉴스 수집 파이프라인으로, 어댑터 패턴을 통해 다양한 뉴스 소스를 유연하게 확장할 수 있는 시스템입니다.
+RSS/Atom 피드 기반 뉴스 수집 파이프라인으로, 어댑터 패턴을 통해 다양한 뉴스 소스를 유연하게 확장할 수 있는 시스템입니다. 웹 API 와 함께 AI Agent 기능을 사용하여 뉴스 정보 가공에 도움을 줍니다.
 
 ## 아키텍처 원칙
 
@@ -45,24 +45,12 @@ FEED_REGISTRY["my_source"] = RSSFeedConfig(
 
 ## 기술 스택
 
-- Python 3.12+
-- MongoDB 4.16+
-- feedparser, newspaper4k, pydantic, pymongo, apscheduler
+Read @pyproject.toml
 
-## 환경 변수 (.env.example)
+## 환경 변수
 
-```bash
-MONGO_URI=mongodb://localhost:27017
-```
+Read @.env.example
 
-## 추후 개발 계획
+## 진행 참고
 
-### 향후 로드맵
-
-1. **FastAPI 웹 서비스**: REST API 엔드포인트 구현
-2. **LangGraph 감성 분석**: 뉴스와 공시 자료를 조합한 종합 감성 분석 워크플로우
-3. **웹 대시보드**: 종목별 감성 트렌드 시각화
-
----
-
-**참고**: 현재는 RSS 뉴스 기사 수집 기능만 활성화되어 있습니다.
+- Read files `@openspec/changes/task.md`
