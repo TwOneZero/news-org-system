@@ -1,6 +1,7 @@
 """News Data Collection Pipeline.
 
 This module provides a comprehensive pipeline for collecting Korean and global news.
+Refactored to use the service layer for better separation of concerns.
 """
 
 import os
@@ -10,7 +11,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 
-from .readers import RSSReader
+from .services import NewsCollectionService, ArticleQueryService, StatisticsService
 from .storage import MongoStore
 
 # Load environment variables
@@ -18,7 +19,11 @@ load_dotenv()
 
 
 class NewsCollectionPipeline:
-    """Main pipeline for collecting news data."""
+    """Main pipeline for collecting news data.
+
+    This class now uses the service layer for business logic,
+    maintaining backward compatibility with existing CLI usage.
+    """
 
     def __init__(
         self,
@@ -43,13 +48,10 @@ class NewsCollectionPipeline:
             articles_collection=articles_collection,
         )
 
-        # Initialize readers using registry system
-        # RSSReader.from_source() creates readers from registered feed configurations
-        self.readers = {
-            "yonhap_economy": RSSReader.from_source("yonhap_economy"),
-            "maeil_management": RSSReader.from_source("maeil_management"),
-            "etnews_today": RSSReader.from_source("etnews_today"),
-        }
+        # Initialize services
+        self.collection_service = NewsCollectionService(store=self.storage)
+        self.query_service = ArticleQueryService(store=self.storage)
+        self.stats_service = StatisticsService(store=self.storage)
 
     def collect_all(self, days_back: int = 1, limit: int = 10) -> dict:
         """Collect articles from all configured sources.
@@ -61,52 +63,24 @@ class NewsCollectionPipeline:
         Returns:
             Dictionary with collection statistics
         """
-        start_date = datetime.now() - timedelta(days=days_back)
-        end_date = datetime.now()
+        results = self.collection_service.collect_all(
+            days_back=days_back,
+            limit=limit,
+        )
 
-        results = {
-            "timestamp": datetime.now().isoformat(),
-            "start_date": start_date.isoformat(),
-            "end_date": end_date.isoformat(),
-            "sources": {},
-        }
-
-        total_saved = 0
-
-        for source_name, reader in self.readers.items():
+        # Print progress for backward compatibility
+        for source_name, source_stats in results["sources"].items():
             print(f"\n{'=' * 60}")
             print(f"Collecting from: {source_name}")
             print(f"{'=' * 60}")
+            if source_stats.get("status") == "success":
+                print(f"Fetched: {source_stats['fetched']} articles")
+                print(f"Saved: {source_stats['saved']} new articles")
+                if source_stats.get('skipped', 0) > 0:
+                    print(f"Skipped: {source_stats['skipped']} duplicate articles")
+            else:
+                print(f"Error: {source_stats.get('error', 'Unknown error')}")
 
-            try:
-                # Fetch articles
-                articles = reader.fetch(
-                    start_date=start_date,
-                    end_date=end_date,
-                    limit=limit,
-                )
-
-                print(f"Fetched {len(articles)} articles")
-
-                # Save to MongoDB (auto-routed to appropriate collection)
-                save_result = self.storage.save_articles(articles)
-                saved = save_result["total_saved"]
-                total_saved += saved
-
-                results["sources"][source_name] = {
-                    "fetched": len(articles),
-                    "saved": saved,
-                }
-
-                print(f"Saved {saved} articles to articles collection")
-
-            except Exception as e:
-                print(f"Error collecting from {source_name}: {e}")
-                results["sources"][source_name] = {
-                    "error": str(e),
-                }
-
-        results["total_saved"] = total_saved
         return results
 
     def get_stats(self) -> dict:
@@ -115,7 +89,17 @@ class NewsCollectionPipeline:
         Returns:
             Dictionary with statistics
         """
-        return self.storage.get_stats()
+        stats = self.stats_service.get_overall_stats()
+        # Convert to format expected by CLI
+        return {
+            "articles": {
+                "total": stats["total_articles"],
+                "by_source": stats["by_source"],
+                "latest": self.storage.get_articles(limit=1)[0]
+                if stats["total_articles"] > 0
+                else None,
+            }
+        }
 
     def get_recent_articles(self, source: str = None, limit: int = 10) -> list:
         """Get recent articles from storage.
@@ -127,7 +111,7 @@ class NewsCollectionPipeline:
         Returns:
             List of article dictionaries
         """
-        return self.storage.get_articles(source=source, limit=limit)
+        return self.query_service.get_recent_articles(source=source, limit=limit)
 
 
 def run_scheduled_job():

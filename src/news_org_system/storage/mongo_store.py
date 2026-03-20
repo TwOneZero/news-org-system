@@ -186,5 +186,6 @@ class MongoStore:
             "latest": self.articles_collection.find_one(sort=[("published_at", -1)]),
         }
 
+    def close(self):
         """Close MongoDB connection."""
         self.client.close()
