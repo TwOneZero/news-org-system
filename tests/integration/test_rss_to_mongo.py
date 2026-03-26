@@ -11,6 +11,7 @@ from datetime import datetime
 import pytest
 
 from news_org_system.readers.rss_reader import RSSReader
+from news_org_system.readers.constants import SourceName
 
 
 @pytest.mark.integration
@@ -22,7 +23,7 @@ def test_rss_to_mongo_pipeline_yonhap(mongo_store, sample_article_limit):
         sample_article_limit: Fixture providing article fetch limit
     """
     # 1. Fetch articles from RSS
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     articles = reader.fetch(limit=sample_article_limit)
 
     assert len(articles) > 0, "Should fetch at least one article"
@@ -53,7 +54,7 @@ def test_rss_to_mongo_pipeline_etnews(mongo_store, sample_article_limit):
         sample_article_limit: Fixture providing article fetch limit
     """
     # 1. Fetch articles from RSS
-    reader = RSSReader.from_source("etnews_today")
+    reader = RSSReader.from_source(SourceName.ETNEWS_TODAY)
     articles = reader.fetch(limit=sample_article_limit)
 
     assert len(articles) > 0, "Should fetch at least one article"
@@ -78,7 +79,7 @@ def test_duplicate_detection(mongo_store):
         mongo_store: MongoStore fixture for testing
     """
     # 1. Fetch articles
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     articles = reader.fetch(limit=1)
 
     assert len(articles) > 0, "Should fetch at least one article"
@@ -103,18 +104,18 @@ def test_retrieve_by_source(mongo_store, sample_article_limit):
         sample_article_limit: Fixture providing article fetch limit
     """
     # 1. Save articles from different sources
-    yonhap_reader = RSSReader.from_source("yonhap_economy")
+    yonhap_reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     yonhap_articles = yonhap_reader.fetch(limit=sample_article_limit)
 
-    etnews_reader = RSSReader.from_source("etnews_today")
+    etnews_reader = RSSReader.from_source(SourceName.ETNEWS_TODAY)
     etnews_articles = etnews_reader.fetch(limit=sample_article_limit)
 
     mongo_store.save_articles(yonhap_articles)
     mongo_store.save_articles(etnews_articles)
 
     # 2. Retrieve by source
-    yonhap_retrieved = mongo_store.get_articles(source="yonhap_economy")
-    etnews_retrieved = mongo_store.get_articles(source="etnews_today")
+    yonhap_retrieved = mongo_store.get_articles(source=SourceName.YONHAP_ECONOMY)
+    etnews_retrieved = mongo_store.get_articles(source=SourceName.ETNEWS_TODAY)
 
     # 3. Verify retrieval
     assert len(yonhap_retrieved) > 0, "Should retrieve Yonhap articles"
@@ -122,9 +123,9 @@ def test_retrieve_by_source(mongo_store, sample_article_limit):
 
     # Verify source filter works
     for article in yonhap_retrieved:
-        assert article["source"] == "yonhap_economy"
+        assert article["source"] == SourceName.YONHAP_ECONOMY
     for article in etnews_retrieved:
-        assert article["source"] == "etnews_today"
+        assert article["source"] == SourceName.ETNEWS_TODAY
 
 
 @pytest.mark.integration
@@ -135,7 +136,7 @@ def test_retrieve_by_date_range(mongo_store):
         mongo_store: MongoStore fixture for testing
     """
     # 1. Save articles
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     articles = reader.fetch(limit=5)
 
     mongo_store.save_articles(articles)
@@ -169,7 +170,7 @@ def test_get_stats(mongo_store, sample_article_limit):
         sample_article_limit: Fixture providing article fetch limit
     """
     # 1. Save articles
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     articles = reader.fetch(limit=sample_article_limit)
 
     mongo_store.save_articles(articles)
@@ -192,7 +193,7 @@ def test_article_structure_in_db(mongo_store):
         mongo_store: MongoStore fixture for testing
     """
     # 1. Save article
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
     articles = reader.fetch(limit=1)
 
     assert len(articles) > 0, "Should fetch at least one article"
@@ -222,7 +223,7 @@ def test_article_structure_in_db(mongo_store):
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "source_name",
-    ["yonhap_economy", "etnews_today"],
+    [SourceName.YONHAP_ECONOMY, SourceName.ETNEWS_TODAY],
 )
 def test_all_sources_to_mongo(source_name, mongo_store, sample_article_limit):
     """Test that all registered sources can be saved to MongoDB.

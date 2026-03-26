@@ -5,6 +5,7 @@ import pytest
 
 from news_org_system.readers.rss_reader import RSSReader
 from news_org_system.readers.base_reader import Article
+from news_org_system.readers.constants import SourceName
 from news_org_system.storage.mongo_store import MongoStore
 
 
@@ -50,7 +51,7 @@ def rss_reader_yonhap_from_source():
     Returns:
         RSSReader instance created from registry
     """
-    return RSSReader.from_source("yonhap_economy")
+    return RSSReader.from_source(SourceName.YONHAP_ECONOMY)
 
 
 @pytest.fixture
@@ -60,7 +61,7 @@ def rss_reader_maeil_from_source():
     Returns:
         RSSReader instance created from registry
     """
-    return RSSReader.from_source("maeil_management")
+    return RSSReader.from_source(SourceName.MAEIL_MANAGEMENT)
 
 
 @pytest.fixture
@@ -70,7 +71,7 @@ def rss_reader_etnews_from_source():
     Returns:
         RSSReader instance created from registry
     """
-    return RSSReader.from_source("etnews_today")
+    return RSSReader.from_source(SourceName.ETNEWS_TODAY)
 
 
 @pytest.fixture
