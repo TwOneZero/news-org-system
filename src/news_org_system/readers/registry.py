@@ -2,6 +2,7 @@
 
 from typing import Dict, Type, Optional
 
+from .constants import SourceName, AdapterName
 from .adapters.base import BaseRSSAdapter
 from .adapters.default_adapter import DefaultRSSAdapter
 from .adapters.yonhap_adapter import YonhapAdapter
@@ -13,31 +14,31 @@ from .models.site_config import SiteConfig
 
 # Adapter registry - maps adapter names to adapter classes
 ADAPTER_REGISTRY: Dict[str, Type[BaseRSSAdapter]] = {
-    "default": DefaultRSSAdapter,
-    "yonhap": YonhapAdapter,
-    "maeil": MaeliAdapter,
-    "etnews": ETnewsAdapter,
+    AdapterName.DEFAULT: DefaultRSSAdapter,
+    AdapterName.YONHAP: YonhapAdapter,
+    AdapterName.MAEIL: MaeliAdapter,
+    AdapterName.ETNEWS: ETnewsAdapter,
 }
 
 
 # Feed registry - maps source names to feed configurations
 FEED_REGISTRY: Dict[str, RSSFeedConfig] = {
-    "yonhap_economy": RSSFeedConfig(
-        source_name="yonhap_economy",
-        feed_url="https://www.yonhapnewstv.co.kr/category/news/economy/feed",
-        adapter_name="yonhap",
+    SourceName.YONHAP_ECONOMY: RSSFeedConfig(
+        source_name=SourceName.YONHAP_ECONOMY,
+        feed_url=SourceName.YONHAP_ECONOMY_URL,
+        adapter_name=AdapterName.YONHAP,
         language="ko",
     ),
-    "maeil_management": RSSFeedConfig(
-        source_name="maeil_management",
-        feed_url="https://www.mk.co.kr/rss/50100032/",
-        adapter_name="maeil",
+    SourceName.MAEIL_MANAGEMENT: RSSFeedConfig(
+        source_name=SourceName.MAEIL_MANAGEMENT,
+        feed_url=SourceName.MAEIL_MANAGEMENT_URL,
+        adapter_name=AdapterName.MAEIL,
         language="ko",
     ),
-    "etnews_today": RSSFeedConfig(
-        source_name="etnews_today",
-        feed_url="https://rss.etnews.com/Section901.xml",
-        adapter_name="etnews",
+    SourceName.ETNEWS_TODAY: RSSFeedConfig(
+        source_name=SourceName.ETNEWS_TODAY,
+        feed_url=SourceName.ETNEWS_TODAY_URL,
+        adapter_name=AdapterName.ETNEWS,
         language="ko",
     ),
 }
