@@ -1,372 +1,308 @@
-# news-org-system
+## 1. Project Overview
 
-한국 및 글로벌 뉴스 수집 파이프라인 시스템 - RSS 피드 기반 뉴스 수집, REST API, 그리고 AI 기능을 통한 뉴스 정보 가공 시스템입니다.
+뉴스 RSS 기반 수집 → MongoDB 저장 → API 제공 → (향후) AI Agent 기반 분석 시스템
 
-## System Overview
+핵심 기능:
 
-RSS/Atom 피드에서 뉴스를 수집하고, FastAPI REST API를 통해 제공하며, LangChain/LangGraph를 통해 AI 기반 뉴스 분석 기능을 제공하는 시스템입니다.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Clients                                 │
-│  CLI Commands | REST API | Future: AI Agent Interface       │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Service Layer                            │
-│  - CollectionService: News collection orchestration         │
-│  - QueryService: Article retrieval & filtering              │
-│  - StatisticsService: Data aggregation                      │
-│  - Future: AIService: LangChain/LangGraph integration       │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Data Layer                              │
-│  ┌─────────────────┐  ┌─────────────────────────────────┐  │
-│  │   Readers       │  │        Storage (MongoDB)          │  │
-│  │  - RSSReader    │  │  - URL-based deduplication       │  │
-│  │  - Adapters     │  │  - Indexing & querying           │  │
-│  │  - Registry     │  │  - Statistics aggregation        │  │
-│  └─────────────────┘  └─────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Architecture Principles
-
-### 1. Layered Architecture
-명확한 관심사 분리를 통해 각 계층이 독립적으로 evolve 할 수 있습니다.
-
-- **API Layer**: HTTP 처리, 요청/응답 검증 (@ai_docs/architecture/layers.md)
-- **Service Layer**: 비즈니스 로직 오케스트레이션
-- **Data Layer**: RSS 파싱 및 MongoDB 저장
-
-### 2. Adapter Pattern
-사이트별 파싱 로직을 독립적인 어댑터로 분리하여 새로운 뉴스 소스 추가를 쉽게 만듭니다.
-
-- `BaseRSSAdapter`: 추상 인터페이스
-- `DefaultRSSAdapter`: 표준 RSS/Atom 처리
-- 사이트별 어댑터: Yonhap, Maeli, ETnews
-- @ai_docs/architecture/adapter-pattern.md
-
-### 3. Registry Pattern
-피드 URL과 어댑터를 중앙에서 관리하여 설정을 쉽게 확장할 수 있습니다.
-
-- `FEED_REGISTRY`: 소스명 → 피드 설정 매핑
-- `ADAPTER_REGISTRY`: 어댑터명 → 어댑터 클래스 매핑
-- @src/news_org_system/readers/registry.py
-
-### 4. Dependency Injection
-FastAPI의 의존성 주입 시스템을 통해 테스트 가능하고 유연한 코드를 만듭니다.
-
-- 서비스 팩토리 함수
-- 싱글톤 MongoStore
-- 테스트 시 모의 객체 주입
-
-### 5. Type Safety
-Pydantic 모델을 통해 데이터 검증과 타입 안전성을 보장합니다.
-
-- 도메인 모델 (내부)
-- API DTO 모델 (외부)
-- 자동 검증 및 직렬화
-
-## Architectural Evolution
-
-### Initial State (CLI-only)
-```
-CLI Commands → Readers + Storage
-```
-
-### Current State (FastAPI Integration, commit b071203)
-```
-CLI Commands ┐
-             ├─→ Service Layer → Readers + Storage
-API Routes  ┘
-```
-
-**Key Changes**:
-- 서비스 레이어 추출: 비즈니스 로직을 CLI와 API가 공유
-- FastAPI 도입: 타입 안전한 REST API, 자동 OpenAPI 문서
-- DTO 분리: API 모델과 도메인 모델의 독립적 evolve
-- 의존성 주입: 테스트 가능한 아키텍처
-
-**Design Decisions**: @ai_docs/architecture/design-decisions.md
-
-## Future Plans: LangChain/LangGraph Integration
-
-### Current State
-- LangChain 의존성 설치됨 (langchain, langchain-openai, transformers)
-- AI 구현은 없지만 서비스 레이어는 확장 준비됨
-
-### Planned Capabilities
-1. **Article Summarization** (LangChain chains)
-2. **Sentiment Analysis** (transformers)
-3. **Entity Extraction** (spaCy NER)
-4. **Topic Classification** (zero-shot classification)
-5. **Cross-Article Synthesis** (LangGraph workflows)
-
-### Integration Architecture
-```
-Service Layer
-  └─ AIService (new)
-      ├─ SummarizationService
-      ├─ SentimentService
-      ├─ EntityExtractionService
-      └─ LangGraph workflows
-```
-
-**Implementation Plan**: @ai_docs/ai/langchain-integration-plan.md
-
-## Key Design Patterns
-
-| Pattern | Purpose | Location |
-|---------|---------|----------|
-| **Service Layer** | 비즈니스 로직 분리 | @src/news_org_system/services/ |
-| **Adapter** | 사이트별 파싱 | @src/news_org_system/readers/adapters/ |
-| **Registry** | 중앙 설정 관리 | @src/news_org_system/readers/registry.py |
-| **Repository** | 데이터 접근 추상화 | @src/news_org_system/storage/mongo_store.py |
-| **Factory** | 서비스/앱 인스턴스 생성 | @src/news_org_system/api/main.py |
-
-## Project Structure
-
-```
-src/news_org_system/
-├── api/              # FastAPI REST API
-│   ├── main.py       # 애플리케이션 팩토리
-│   ├── dependencies.py  # 의존성 주입
-│   ├── models/       # API DTO (Pydantic)
-│   └── routes/       # API 엔드포인트
-├── services/         # 비즈니스 로직 서비스 레이어
-│   ├── collection.py # 뉴스 수집 오케스트레이션
-│   ├── query.py      # 기사 조회 및 필터링
-│   └── stats.py      # 통계 집계
-├── readers/          # RSS 피드 파싱
-│   ├── adapters/     # 사이트별 어댑터
-│   ├── rss_reader.py
-│   └── registry.py   # 피드/어댑터 레지스트리
-└── storage/          # MongoDB 저장소
-    └── mongo_store.py
-```
-
-**Detailed Layer Architecture**: @ai_docs/architecture/layers.md
-
-## Extension Points
-
-### Adding New RSS Sources
-새로운 뉴스 소스를 추가하는 방법:
-
-1. 표준 RSS 피드: `default` 어댑터 사용
-2. 커스텀 파싱 필요: 새 어댑터 생성
-
-```python
-# @src/news_org_system/readers/registry.py
-FEED_REGISTRY["my_source"] = RSSFeedConfig(
-    source_name="my_source",
-    feed_url="https://example.com/rss.xml",
-    adapter_name="default",  # or custom adapter
-    language="ko",
-)
-```
-
-**Complete Guide**: @ai_docs/development/adding-sources.md
-
-### Extending Service Layer
-새로운 서비스를 추가하는 방법:
-
-1. 서비스 클래스 생성 (MongoStore 주입)
-2. 의존성 주입 함수 추가
-3. API 라우트 생성
-
-**Complete Guide**: @ai_docs/development/service-extension.md
-
-### Adding API Endpoints
-새로운 API 엔드포인트 추가:
-
-1. Pydantic 모델 생성 (api/models/)
-2. 라우트 핸들러 생성 (api/routes/)
-3. 메인 앱에 라우터 등록
-
-**API Reference**: @ai_docs/api/endpoint-reference.md
-
-## Technology Stack
-
-### Core
-- **Python**: 3.12+
-- **FastAPI**: REST API 프레임워크
-- **Pydantic**: 데이터 검증
-- **MongoDB**: 문서 저장소
-
-### RSS Processing
-- **feedparser**: RSS/Atom 피드 파싱
-- **newspaper4k**: 웹 스크래핑 (fallback)
-- **BeautifulSoup4**: HTML 처리
-
-### AI/ML (Future)
-- **LangChain**: LLM 프레임워크
-- **LangGraph**: 워크플로우 오케스트레이션
-- **transformers**: 로컬 NLP 모델
-- **spaCy**: 개체명 인식 (NER)
-
-**Full Dependencies**: @pyproject.toml
-
-## API Usage
-
-### Starting the API Server
-
-```bash
-# Using installed command
-news-org-api
-
-# Or with uvicorn
-uvicorn news_org_system.api.main:app --reload
-```
-
-### Interactive Documentation
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-**Quick Start**: @README.api.md
-**Full Reference**: @ai_docs/api/endpoint-reference.md
-
-## CLI Usage
-
-### Collection Commands
-
-```bash
-# Collect from all sources
-news-org collect --days-back 1 --limit 50
-
-# Collect from specific source
-news-org collect --source yonhap_economy --limit 100
-
-# View statistics
-news-org stats
-
-# Run as daemon (hourly collection)
-news-org daemon --interval 3600
-```
-
-## Development Workflow
-
-### Environment Setup
-
-```bash
-# Install dependencies
-pip install -e .
-
-# Run API server
-news-org-api
-
-# Run CLI
-news-org collect
-
-# Run tests
-pytest
-```
-
-### Testing
-
-```bash
-# Unit tests (fast, no network)
-pytest -m unit
-
-# Integration tests (real RSS feeds, network access)
-pytest -m integration
-
-# All tests with coverage
-pytest --cov=news_org_system --cov-report=term-missing
-```
-
-### Deployment Guide
-
-Production 배포를 위한 가이드:
-
-**Complete Guide**: @ai_docs/operations/deployment.md
-
-## Historical Context
-
-### Git Commits
-- **b071203**: FastAPI REST API 서비스 레이어 추가
-- **c25f956**: Merge #3 - FastAPI 기능 병합
-
-### Design Documents
-- **FastAPI Migration**: @openspec/changes/archive/2026-03-20-add-fastapi-service-layer/design.md
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# MongoDB
-MONGO_URI=mongodb://localhost:27017
-MONGO_DATABASE=news_org
-MONGO_COLLECTION=articles
-
-# API Server
-API_HOST=0.0.0.0
-API_PORT=8000
-CORS_ORIGINS=http://localhost:3000,http://localhost:8000
-```
-
-**Example**: @.env.example
-
-## Available Sources
-
-| Source | Description | Feed URL | Adapter |
-|--------|-------------|----------|---------|
-| `yonhap_economy` | 연합뉴스 TV 경제 | Yonhap RSS | yonhap |
-| `maeil_management` | 매일경제 매니지먼트 | Maeil RSS | maeil |
-| `etnews_today` | 전자신문 오늘 | ETnews RSS | etnews |
-
-## Documentation Structure
-
-```
-├── CLAUDE.md                    # 시스템 설계 및 아키텍처 개요 (이 파일)
-├── README.api.md                # API 빠른 시작
-├── ai_docs/
-│   ├── architecture/
-│   │   ├── layers.md            # 계층형 아키텍처 상세
-│   │   ├── design-decisions.md  # 아키텍처 결정사항
-│   │   └── adapter-pattern.md   # 어댑터 패턴 가이드
-│   ├── development/
-│   │   ├── adding-sources.md    # RSS 피드 추가 가이드
-│   │   └── service-extension.md # 서비스 레이어 확장
-│   ├── api/
-│   │   └── endpoint-reference.md    # API 엔드포인트 레퍼런스
-│   ├── ai/
-│   │   └── langchain-integration-plan.md  # AI 통합 계획
-│   └── operations/
-│       └── deployment.md        # 배포 및 운영 가이드
-└── openspec/
-    └── changes/
-        └── archive/
-            └── 2026-03-20-add-fastapi-service-layer/
-                └── design.md    # FastAPI 설계 문서
-```
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| @src/news_org_system/news_api.py | CLI 메인 오케스트레이션 |
-| @src/news_org_system/api/main.py | FastAPI 애플리케이션 팩토리 |
-| @src/news_org_system/services/collection.py | 뉴스 수집 서비스 |
-| @src/news_org_system/readers/registry.py | 피드/어댑터 레지스트리 |
-| @src/news_org_system/storage/mongo_store.py | MongoDB 저장소 |
-
-## Architecture Decisions Summary
-
-1. **Service Layer Extraction**: API/CLI 코드 공유, 테스트 가능성
-2. **FastAPI Framework**: 타입 안전성, 자동 문서화
-3. **Dependency Injection**: 테스트 용이성, 명확한 의존성
-4. **DTO Separation**: API/도메인 모델 독립적 evolve
-5. **Sync Services**: 간단한 구현, 필요시 async로 마이그레이션 가능
-
-**Full Decisions**: @ai_docs/architecture/design-decisions.md
+- RSS/Atom 뉴스 수집
+- 기사 저장 및 조회
+- 통계 집계
+- (Planned) 기업 기반 뉴스 분석 / 감성 분석 / Agentic Search
 
 ---
 
-**Last Updated**: 2026-03-21
-**Architecture Version**: FastAPI Service Layer (v0.1.0)
-**Next Milestone**: LangChain/LangGraph Integration (Phase 1)
+## 2. OpenSpec Usage (Source of Truth)
+
+### 역할 분리 (매우 중요)
+
+- **정확한 요구사항 / 기능 정의**
+→ `openspec/specs/`
+- **진행 중 작업 (change 단위)**
+→ `openspec/changes/<change-id>/`
+- **이 파일(CLAUDE.md)**
+→ 작업 규칙 / 개발 방식 / 실행 방법
+
+---
+
+### 작업 규칙
+
+- 기능 수정 전 필요 시:
+    - 관련 `openspec/specs/` 먼저 읽기
+- 진행 중 작업:
+    - `openspec/changes/<id>/proposal.md`
+    - `design.md`, `tasks.md`, `specs/` 확인
+- 수동 코드 수정 후:
+    - change 문서 반드시 동기화
+    - (`design.md`, `tasks.md`, spec delta)
+
+---
+
+### 권장 워크플로우
+
+```bash
+# 작업 시작
+/opsx:new
+# 구현 진행
+/opsx:continue <change-id>
+# 수동 수정 후
+/opsx-sync-manual <change-id>
+# 검증
+/opsx:verify <change-id>
+# spec merge 검토
+/opsx:sync <change-id>
+# 완료
+archive
+```
+
+---
+
+### 규칙
+
+- CLAUDE.md는 spec source가 아니다
+- 기능 정의는 항상 OpenSpec 기준
+- spec과 코드가 다르면 spec을 먼저 확인
+
+---
+
+## 3. Run & Execution
+
+### API 서버 실행
+
+```
+uv run news-org-api
+```
+
+또는
+
+```
+uvicorn news_org_system.api.main:app--reload
+```
+
+---
+
+### CLI
+
+```bash
+# 전체 수집
+news-org collect
+# 특정 소스
+news-org collect--source yonhap_economy
+# 통계
+news-org stats
+# 데몬
+news-org daemon
+```
+
+---
+
+## 4. Testing
+
+```bash
+# 전체 테스트
+pytest
+# unit
+pytest -m unit
+# integration
+pytest -m integration
+# coverage
+pytest --cov=news_org_system
+```
+
+---
+
+## 5. Development Pattern
+
+### Architecture
+
+Layered Architecture
+
+```
+API → Service → Data
+```
+
+---
+
+### 핵심 패턴
+
+- Service Layer: 비즈니스 로직 분리
+- Adapter Pattern: RSS 사이트별 파싱
+- Registry Pattern: 피드/어댑터 관리
+- Dependency Injection: FastAPI 기반 DI
+- Repository: Mongo 접근 추상화
+
+---
+
+### 코드 규칙
+
+- 문자열 대신 Enum 사용 (`SourceName`, `AdapterName`)
+- API 모델(Pydantic)과 내부 도메인 모델 분리
+- 서비스는 I/O 없이 pure하게 유지
+- Mongo 접근은 storage 레이어에서만 수행
+
+**Enum Usage Examples:**
+
+```python
+# Import constants
+from news_org_system.readers.constants import SourceName, AdapterName
+
+# Using source names in code
+source = SourceName.YONHAP_ECONOMY  # Type-safe, IDE autocomplete
+print(source)  # "yonhap_economy" - converts to string automatically
+
+# Get feed URL for a source
+url = SourceName.get_url(SourceName.YONHAP_ECONOMY)
+# Returns: "https://www.yonhapnewstv.co.kr/category/news/economy/feed"
+
+# Using adapter names
+adapter = AdapterName.YONHAP  # Instead of "yonhap"
+
+# Benefits:
+# - Compile-time type checking
+# - IDE autocomplete support
+# - Single source of truth
+# - Prevents typos
+```
+
+---
+
+## 6. Domain Knowledge
+
+### 6.1 News RSS Pipeline
+
+Flow:
+
+```
+RSS Feed → Adapter → Article Parse → Mongo 저장 → API 제공
+```
+
+핵심 요소:
+
+- RSS는 source마다 구조 다름 → Adapter 필요
+- URL 기반 deduplication
+- fallback: newspaper4k / bs4
+
+---
+
+### 6.2 확장 방향 (중요)
+
+현재:
+
+- 단순 수집 + 조회
+
+목표:
+
+- 기업 단위 뉴스 aggregation
+- 시간 기반 감성 분석
+- RAG 기반 검색
+
+---
+
+### 6.3 Agentic Search 구조 (미래 설계)
+
+예상 구조:
+
+```
+User Query
+  ↓
+Agent
+  ↓
+(1) 기업 추출
+(2) 기간 파싱
+  ↓
+Mongo Query / Vector Search
+  ↓
+LLM Summary + Sentiment
+```
+
+---
+
+## 7. Extension Rules
+
+### RSS 추가
+
+1. `SourceName` enum에 새 소스 추가 (`src/news_org_system/readers/constants.py`):
+
+```python
+class SourceName(str, Enum):
+    # 기존 소스들...
+    YONHAP_ECONOMY = "yonhap_economy"
+    YONHAP_ECONOMY_URL = "https://www.yonhapnewstv.co.kr/category/news/economy/feed"
+
+    # 새 소스 추가
+    MY_NEW_SOURCE = "my_new_source"
+    MY_NEW_SOURCE_URL = "https://example.com/rss.xml"
+```
+
+2. `AdapterName` enum에 어댑터 추가 (필요시):
+
+```python
+class AdapterName(str, Enum):
+    DEFAULT = "default"
+    YONHAP = "yonhap"
+    # ...
+    MY_ADAPTER = "my_adapter"  # 새 어댑터
+```
+
+3. `registry.py`에 피드 등록:
+
+```python
+from .constants import SourceName, AdapterName
+
+FEED_REGISTRY: Dict[str, RSSFeedConfig] = {
+    # 기존 피드들...
+    SourceName.MY_NEW_SOURCE: RSSFeedConfig(
+        source_name=SourceName.MY_NEW_SOURCE,
+        feed_url=SourceName.MY_NEW_SOURCE_URL,
+        adapter_name=AdapterName.DEFAULT,
+        language="ko",
+    ),
+}
+```
+
+4. 필요시 adapter 작성 (`src/news_org_system/readers/adapters/my_adapter.py`)
+
+---
+
+### 서비스 추가
+
+1. service 클래스 생성
+2. DI 등록
+3. API 연결
+
+---
+
+### API 추가
+
+1. Pydantic 모델 정의
+2. route 생성
+3. router 등록
+
+---
+
+## 8. Environment
+
+```
+MONGO_URI
+MONGO_DATABASE
+MONGO_COLLECTION
+API_HOST
+API_PORT
+CORS_ORIGINS
+```
+
+---
+
+## 9. Important Principles
+
+- 코드보다 spec이 우선
+- 수동 수정 후 반드시 OpenSpec sync
+- change 단위로 작업 관리
+- CLAUDE.md는 운영 문서 (spec 아님)
+
+---
+
+## 10. One-line Rules
+
+- “기능은 OpenSpec에서 정의한다”
+- “코드 수정 후 spec을 따라오게 한다”
+- “CLAUDE.md는 행동 규칙만 가진다”
