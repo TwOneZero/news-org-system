@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...services import NewsCollectionService
-from ...storage import MongoStore
 from ..dependencies import get_collection_service
 from ..models.collection import (
     CollectionRequest,
@@ -46,7 +45,7 @@ async def collect_all(
     # Convert source results to SourceSummary models
     sources = {}
     for source_name, source_result in result["sources"].items():
-        sources[source_name] = SourceSummary(**source_result)
+        sources[source_name] = SourceSummary(source=source_name, **source_result)
 
     return CollectionResponse(
         timestamp=result["timestamp"],

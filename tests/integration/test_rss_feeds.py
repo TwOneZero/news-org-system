@@ -14,6 +14,7 @@ from datetime import datetime
 from news_org_system.readers.base_reader import Article
 from news_org_system.readers.rss_reader import RSSReader
 from news_org_system.readers.registry import get_feed_config, list_feeds
+from news_org_system.readers.constants import SourceName
 
 
 @pytest.mark.integration
@@ -246,10 +247,10 @@ def test_from_source_method_yonhap(sample_article_limit):
         sample_article_limit: Fixture providing article fetch limit
     """
     # Create reader using from_source
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
 
     # Verify it was created correctly
-    assert reader.source_name == "yonhap_economy"
+    assert reader.source_name == SourceName.YONHAP_ECONOMY
     assert "yonhapnewstv.co.kr" in reader.feed_url
     assert reader.adapter_name == "yonhap"
 
@@ -265,9 +266,9 @@ def test_from_source_method_maeil(sample_article_limit):
     Args:
         sample_article_limit: Fixture providing article fetch limit
     """
-    reader = RSSReader.from_source("maeil_management")
+    reader = RSSReader.from_source(SourceName.MAEIL_MANAGEMENT)
 
-    assert reader.source_name == "maeil_management"
+    assert reader.source_name == SourceName.MAEIL_MANAGEMENT
     assert "mk.co.kr" in reader.feed_url
     assert reader.adapter_name == "maeil"
 
@@ -282,9 +283,9 @@ def test_from_source_method_etnews(sample_article_limit):
     Args:
         sample_article_limit: Fixture providing article fetch limit
     """
-    reader = RSSReader.from_source("etnews_today")
+    reader = RSSReader.from_source(SourceName.ETNEWS_TODAY)
 
-    assert reader.source_name == "etnews_today"
+    assert reader.source_name == SourceName.ETNEWS_TODAY
     assert "etnews.com" in reader.feed_url
     assert reader.adapter_name == "etnews"
 
@@ -335,9 +336,9 @@ def test_all_rss_sources_fetchable(
 @pytest.mark.parametrize(
     "source_name,expected_source",
     [
-        ("yonhap_economy", "yonhap_economy"),
-        ("maeil_management", "maeil_management"),
-        ("etnews_today", "etnews_today"),
+        (SourceName.YONHAP_ECONOMY, SourceName.YONHAP_ECONOMY),
+        (SourceName.MAEIL_MANAGEMENT, SourceName.MAEIL_MANAGEMENT),
+        (SourceName.ETNEWS_TODAY, SourceName.ETNEWS_TODAY),
     ],
 )
 def test_all_registry_sources_fetchable(
@@ -400,9 +401,9 @@ def test_registry_feed_configs():
     feeds = list_feeds()
 
     # Check that we have the expected feeds
-    assert "yonhap_economy" in feeds
-    assert "maeil_management" in feeds
-    assert "etnews_today" in feeds
+    assert SourceName.YONHAP_ECONOMY in feeds
+    assert SourceName.MAEIL_MANAGEMENT in feeds
+    assert SourceName.ETNEWS_TODAY in feeds
 
     # Check that all configs are valid
     for source_name, config in feeds.items():
@@ -418,7 +419,7 @@ def test_date_filtering():
     """Test that date filtering works correctly."""
     from datetime import timedelta
 
-    reader = RSSReader.from_source("yonhap_economy")
+    reader = RSSReader.from_source(SourceName.YONHAP_ECONOMY)
 
     # Fetch articles from last 24 hours
     start_date = datetime.now() - timedelta(days=1)

@@ -28,13 +28,6 @@ class RSSReader(BaseReader):
         >>> articles = reader.fetch(limit=10)
     """
 
-    # Keep for backward compatibility (deprecated - use registry instead)
-    FEED_URLS = {
-        "yonhap_economy": "https://www.yonhapnewstv.co.kr/category/news/economy/feed",
-        "maeil_management": "https://www.mk.co.kr/rss/50100032/",
-        "etnews_today": "https://rss.etnews.com/Section901.xml",
-    }
-
     def __init__(
         self,
         source_name: str = "rss",

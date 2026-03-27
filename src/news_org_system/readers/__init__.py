@@ -3,6 +3,9 @@
 from .base_reader import BaseReader, Article
 from .rss_reader import RSSReader
 
+# Constants module
+from .constants import SourceName, AdapterName
+
 # New adapter pattern exports
 from .models import RSSFeedConfig, RSSItem, SiteConfig
 from .adapters import BaseRSSAdapter, DefaultRSSAdapter
@@ -21,6 +24,9 @@ __all__ = [
     "BaseReader",
     "Article",
     "RSSReader",
+    # Constants
+    "SourceName",
+    "AdapterName",
     # Pydantic models
     "RSSFeedConfig",
     "RSSItem",

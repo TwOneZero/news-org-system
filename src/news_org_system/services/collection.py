@@ -92,6 +92,10 @@ class NewsCollectionService:
             "sources": {},
         }
 
+        logger.info(
+            f"Start Collecting articles from {len(self.readers)} sources from {start_date} to {end_date}"
+        )
+
         for source_name, reader in self.readers.items():
             try:
                 # Fetch articles
